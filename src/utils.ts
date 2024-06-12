@@ -1,86 +1,73 @@
-import * as utils from '@dcl-sdk/utils'
-import { ColliderLayer, Entity, GltfContainer, InputAction, MeshCollider, MeshRenderer, Transform, TransformType, engine, pointerEventsSystem } from '@dcl/sdk/ecs';
-import { Quaternion, Vector3 } from '@dcl/sdk/math';
+import { GltfContainer, Transform } from '@dcl/sdk/ecs';
+import { Vector3 } from '@dcl/sdk/math';
+import { movePlayerTo } from '~system/RestrictedActions'
+import { add3DText, clear3DText } from './helpers';
+import { mapEntity, mapRot, displayEntity, displayPanelPopUp, mapTitleEntity, dataPanelParent, pointerDataPanel } from './resources';
+import { POINTER_POSITIONS } from './mapData';
+import { activePointerId, textEntities, stopHover } from './factory';
 
-export function getRandomHexColor(): string {
-  const letters = "0123456789ABCDEF";
-  let color = "#";
-  for (let i = 0; i < 6; i++) {
-    color += letters[Math.floor(Math.random() * 16)];
-  }
-  return color;
+// Change pointer text pos here
+Transform.create(dataPanelParent, {position: Vector3.create(6.01, 1.9, 8.35)})
+
+
+let dataPanelVisible = false
+
+export function getActivePointerId() {
+  return activePointerId
 }
 
-export function createHoverEffect(entity: Entity, displacement: number, duration: number) {
+// show pointer details on display panel
+export function togglePointerDetails(id: string) {
 
-  let hoverOn = true 
-  const transform = Transform.getMutable(entity)
+  //clear existing 3d text
+  clear3DText(textEntities)
+  stopHover(mapTitleEntity)
 
-  const basePos = transform.position
-  const upPos = Vector3.create(basePos.x, basePos.y + displacement, basePos.z)
-  const downPos = Vector3.create(basePos.x, basePos.y - displacement, basePos.z)
-
-  function moveUp() {
-    utils.tweens.startTranslation(entity, upPos, downPos, duration, utils.InterpolationType.EASEQUAD, moveDown)
-  }
-
-
-  function moveDown() {
-    utils.tweens.startTranslation(entity, downPos, upPos, duration, utils.InterpolationType.EASEQUAD, moveUp)
-  }
-
-  
-  moveUp()
-
-}
-
-export function createButton(entity: Entity, transform: TransformType, shape: string, callback: string) {
-  Transform.create(entity, {
-    position: transform.position,
-    rotation: transform.rotation,
-    scale: transform.scale,
-    parent: mapEntity
-  })
-  //GltfContainer.create(entity, { src: shape, invisibleMeshesCollisionMask: ColliderLayer.CL_PHYSICS || ColliderLayer.CL_POINTER })
-  MeshRenderer.setBox(entity)
-  MeshCollider.setBox(entity)
-
-  pointerEventsSystem.onPointerDown(
-    {
-      entity: entity,
-      opts: {
-        button: InputAction.IA_POINTER,
-        hoverText: 'Click'
-      }
-    },
-    function () {
-      if (callback === 'null') {
-        console.log('run click action')
-       // createHoverEffect(entity, 0.25, 1)
-      }
-      else {
-        console.log('do not run click action')
-      }
+  if (!dataPanelVisible) {
+    Transform.create(pointerDataPanel, {
+      position: Vector3.create(0, 0, 0),
+      rotation: mapRot,
+      parent: mapEntity
+    })
+    dataPanelVisible = true
+     GltfContainer.deleteFrom(displayEntity)
+    
     }
-  )
+    const pointerData = POINTER_POSITIONS.find(pointer => pointer.id === id)
+    if (pointerData) {
+      add3DText(textEntities, dataPanelParent, `${pointerData.details}`, 0, -0.2, false)
+      GltfContainer.createOrReplace(pointerDataPanel, { src: displayPanelPopUp })
+  }
+
+
 }
 
-export const mapTransform = Vector3.create(8, 0, 8)
-export const mapScale = Vector3.One()
-export const mapRot = Quaternion.fromEulerDegrees(0, 0, 0)
+// move player to selected area
+export function teleportPlayer() {
+  let activePointerId = getActivePointerId()
 
-export const mapEntity = engine.addEntity()
-Transform.create(mapEntity, {
-  position: mapTransform,
-  rotation: mapRot,
-  scale: mapScale
-})
+  if (activePointerId != null) {
 
-export const buttonEntity_1 = engine.addEntity()
-export const buttonTransform_1: TransformType = {
-  position: Vector3.create(0, 0, 0),
-  rotation: mapRot,
-  scale: mapScale,
-  parent: mapEntity
+    let teleportDestination = calculateTeleportDestination(activePointerId);
+      movePlayerTo({
+        newRelativePosition: teleportDestination,
+        cameraTarget: teleportDestination,
+      })
+  
+    } else {
+      console.error(`Invalid active pointer ID: ${activePointerId}`)
+    }
+  }
+
+/// Calculate which area to teleport the player to depending on the pointer they clicked
+export function calculateTeleportDestination(activePointerId: string): Vector3 {
+  let teleportDestination: Vector3 = Vector3.Zero();
+
+  for (const PointerData of POINTER_POSITIONS) {
+    if (PointerData.id === activePointerId) {
+      teleportDestination = PointerData.mapPos;
+      break
+    }
+  }
+  return teleportDestination
 }
-

@@ -1,18 +1,28 @@
-// We define the empty imports so the auto-complete feature works as expected.
-import { Vector3 } from '@dcl/sdk/math'
-import { engine } from '@dcl/sdk/ecs'
+import { pointerShape, mapTitle, jumpIn, teleportButtonPos, mapTitleEntity, pointerA, pointerB, pointerC, pointerD, pointerE, pointerF, pointerG, teleport } from './resources'
+import { POINTER_POSITIONS } from './mapData'
+import { createBaseMap, createButton, createHoverEffect } from './factory'
 
-import { changeColorSystem, circularSystem } from './systems'
-import { createHoverEffect, buttonEntity_1, createButton, mapEntity, mapRot, mapScale, mapTransform, buttonTransform_1 } from './utils'
+
 
 export function main() {
-  // Defining behavior. See `src/systems.ts` file.
-  engine.addSystem(circularSystem)
-  engine.addSystem(changeColorSystem)
 
-  // draw UI. Here is the logic to spawn cubes.
-const buttonDemo = createButton(buttonEntity_1, buttonTransform_1, 'null', 'null')
+  createBaseMap()
 
-  createHoverEffect(buttonEntity_1, 0.25, 2)
+  // create map title
+ createButton(mapTitleEntity, teleportButtonPos.position, mapTitle, 'Click', 'null', 'null')
+ createHoverEffect(mapTitleEntity, 0.05, 0.75)
+
+// create teleport button
+createButton(teleport, teleportButtonPos.position, jumpIn, 'Teleport, choose pointer', 'teleport', 'A')
+
+  //create pointers
+  createButton(pointerA, POINTER_POSITIONS[0].position, pointerShape, POINTER_POSITIONS[0].name, 'pointer', 'A')
+  createButton(pointerB, POINTER_POSITIONS[1].position, pointerShape, POINTER_POSITIONS[1].name, 'pointer', 'B')
+  createButton(pointerC, POINTER_POSITIONS[2].position, pointerShape, POINTER_POSITIONS[2].name, 'pointer', 'C')
+  createButton(pointerD, POINTER_POSITIONS[3].position, pointerShape, POINTER_POSITIONS[3].name, 'pointer', 'D')
+  createButton(pointerE, POINTER_POSITIONS[4].position, pointerShape, POINTER_POSITIONS[4].name, 'pointer', 'E')
+  createButton(pointerF, POINTER_POSITIONS[5].position, pointerShape, POINTER_POSITIONS[5].name, 'pointer', 'F')
+  createButton(pointerG, POINTER_POSITIONS[6].position, pointerShape, POINTER_POSITIONS[6].name, 'pointer', 'G')
+
 
 }

@@ -1,42 +1,98 @@
-import {
-  Entity,
-  engine,
-  Transform,
-  MeshRenderer,
-  MeshCollider,
-  PointerEvents,
-  PointerEventType,
-  InputAction,
-  Material
-} from '@dcl/sdk/ecs'
-import { Cube, Spinner } from './components'
-import { Color4 } from '@dcl/sdk/math'
-import { getRandomHexColor } from './utils'
+import { Entity, Transform, InputAction, ColliderLayer, GltfContainer, pointerEventsSystem } from '@dcl/sdk/ecs'
+import { Vector3 } from '@dcl/sdk/math'
+import { mapEntity, mapTransform, mapRot, mapScale, mapTable, displayEntity, displayPanel } from './resources'
+import { togglePointerDetails, calculateTeleportDestination, teleportPlayer } from './utils'
+import * as utils from '@dcl-sdk/utils'
 
-// Cube factory
-export function createCube(x: number, y: number, z: number, spawner = true): Entity {
-  const entity = engine.addEntity()
+export let activePointerId = ''
+export let currentHoverPointer: Entity | null = null
 
-  // Used to track the cubes
-  Cube.create(entity)
+export const textEntities: Entity[] = []
 
-  Transform.create(entity, { position: { x, y, z } })
+export function createButton(entity: Entity, position: Vector3, shape: string, hoverText: string, callback: string, id: string) {
+  Transform.createOrReplace(entity, {
+    position: position,
+    parent: mapEntity
+    })
+    
+    GltfContainer.createOrReplace(entity, { src: shape, invisibleMeshesCollisionMask: ColliderLayer.CL_PHYSICS | ColliderLayer.CL_POINTER })
 
-  // set how the cube looks and collides
-  MeshRenderer.setBox(entity)
-  MeshCollider.setBox(entity)
-  Material.setPbrMaterial(entity, { albedoColor: Color4.fromHexString(getRandomHexColor()) })
+  pointerEventsSystem.onPointerDown(
+    {
+      entity: entity,
+      opts: {
+        button: InputAction.IA_POINTER,
+        hoverText: hoverText
+      }
+    },
+    function () {
+      if (callback === 'null') {
+        console.log('run click action')
 
-  // Make the cube spin, with the circularSystem
-  Spinner.create(entity, { speed: 100 * Math.random() })
+      }
+      else if (callback === 'pointer') {
+        console.log('run pointer action');
+        activePointerId = id;
+        console.log('Active pointer id:', activePointerId);
 
-  // Create PointerEvent with the hover feedback.
-  // We are going to check the onClick event on the changeColorSystem.
-  PointerEvents.create(entity, {
-    pointerEvents: [
-      { eventType: PointerEventType.PET_DOWN, eventInfo: { button: InputAction.IA_POINTER, hoverText: 'Change Color' } }
-    ]
-  })
+        // stop hover effect on previous pointers
+        if (currentHoverPointer && currentHoverPointer !== entity) {
+          stopHover(currentHoverPointer)
+        }
 
-  return entity
+        // start hover on new pointer
+        createHoverEffect(entity, 0.15, 1)
+        currentHoverPointer = entity
+
+        // show display panel with corresponding data
+        togglePointerDetails(activePointerId)
+
+      }
+      else if (callback === 'teleport') {
+        const teleportDestination = calculateTeleportDestination(activePointerId);
+        teleportPlayer();
+        console.log(`teleport player to ${teleportDestination}`)
+      }
+      else {
+        console.log('do not run click action')
+      }
+    }
+  )
+
+  
 }
+
+export function createBaseMap() {
+  Transform.create(mapEntity, {
+    position: mapTransform,
+    rotation: mapRot,
+    scale: mapScale
+  })
+  GltfContainer.createOrReplace(mapEntity, { src: mapTable, invisibleMeshesCollisionMask: ColliderLayer.CL_POINTER | ColliderLayer.CL_PHYSICS})
+Transform.createOrReplace(displayEntity, { parent: mapEntity })
+GltfContainer.createOrReplace(displayEntity, { src: displayPanel, invisibleMeshesCollisionMask: ColliderLayer.CL_PHYSICS})
+}
+
+export function createHoverEffect(entity: Entity, displacement: number, duration: number) {
+  let transform = Transform.getMutable(entity)
+
+  const basePos = transform.position
+  const upPos = Vector3.create(basePos.x, basePos.y + displacement, basePos.z)
+  const downPos = Vector3.create(basePos.x, basePos.y - displacement, basePos.z)
+
+  function moveUp() {
+    utils.tweens.startTranslation(entity, upPos, downPos, duration, utils.InterpolationType.EASESINE, moveDown)
+  }
+
+
+  function moveDown() {
+    utils.tweens.startTranslation(entity, downPos, upPos, duration, utils.InterpolationType.EASESINE, moveUp)
+  }
+
+
+  moveUp()
+  }
+
+  export function stopHover(entity: Entity) {
+    utils.tweens.stopTranslation(entity)
+  }
