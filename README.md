@@ -2,11 +2,18 @@
 
 This project is a Decentraland SDK 7 scene that creates a 3D mini map. You can click on pointers to see information about different areas and then click the "Jump In" button to teleport to the selected location. Feel free to integrate this into your projects.
 
+![highlight_2](https://github.com/KJwalker3D/miniMap/assets/53322457/11c66e42-c3a9-46ad-b87a-3162a111b21c)
+
+
 ## Features
 
 - Interactive 3D mini map
 - Clickable pointers to display area information
 - "Jump In" button to teleport to locations
+
+
+![highlight_4](https://github.com/KJwalker3D/miniMap/assets/53322457/9f5b8c14-9f09-4670-8b8c-3c386f932f75)
+
 
 ## Customization
 
@@ -38,6 +45,8 @@ export const POINTER_POSITIONS: PointerData[] = [
   // Add more pointers here...
 ]
 ```
+![highlight_6](https://github.com/KJwalker3D/miniMap/assets/53322457/5525e67b-8193-4cbb-8b50-d2efbf075eca)
+
 
 ### resources.ts
 
