@@ -104,3 +104,7 @@ Learn more about how to build your own scenes on the Decentraland [documentation
 ## Copyright info
 
 This scene is protected with a standard MIT licence. See the terms and conditions in the [LICENSE](/LICENSE) file.
+
+## Credits
+
+Special thanks to Lastraum, who created the code for 3D text used in this project, originally released in this open-source [repository](https://github.com/last-slice/game-expo-2024).
